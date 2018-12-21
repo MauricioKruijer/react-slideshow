@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import Notifications from '../slideshow/Notification'
 
 class SlideShow extends Component {
   render () {
@@ -9,6 +10,7 @@ class SlideShow extends Component {
         </div>
         <div>
           Super vette Notifications
+          <Notifications/>
         </div>
       </div>
     )
