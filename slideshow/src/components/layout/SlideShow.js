@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import Notifications from '../slideshow/Notification'
+import FirebaseContext from '../Firebase/Context';
 
 class SlideShow extends Component {
   state = {
@@ -14,6 +15,10 @@ class SlideShow extends Component {
     // deal with firebase socket
 
     // deal with queue
+    console.log(this.props.firebase.slides())
+    this.props.firebase.slides().on('value', snapshot => {
+      console.log(snapshot.val());
+    })
   }
 
   componentWillUnmount() {
@@ -21,6 +26,7 @@ class SlideShow extends Component {
   }
 
   render () {
+    console.log(this.props.firebase)
     return (
       <div>
         <div>
@@ -35,4 +41,6 @@ class SlideShow extends Component {
   }
 }
 
-export default SlideShow
+export default (props) => <FirebaseContext.Consumer>
+  { firebase => <SlideShow firebase={firebase} {...props}/> }
+</FirebaseContext.Consumer>

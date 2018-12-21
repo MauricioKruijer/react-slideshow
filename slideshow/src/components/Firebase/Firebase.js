@@ -1,4 +1,5 @@
-import app from 'firebase/app';
+import firebase from 'firebase/app';
+import 'firebase/database';
 
 const config = {
   apiKey: "AIzaSyAyuM9nLn1RHUv1j5PmWHmz7aJZkMbAvM4",
@@ -11,7 +12,12 @@ const config = {
 
 class Firebase {
   constructor() {
-    app.initializeApp(config);
+      firebase.initializeApp(config);
+      this.db = firebase.database()
+  }
+
+  slides = () => {
+    return this.db.ref('slides');
   }
 }
 
