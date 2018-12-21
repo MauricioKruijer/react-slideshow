@@ -13,12 +13,18 @@ class SlideShow extends Component {
 
   componentDidMount() {
     // deal with firebase socket
+    this.props.firebase.slides().once('value', snapshot => {
+      const snapshots = snapshot.val();
+      const keys = Object.keys(snapshots);
+      const last = keys[keys.length-1];
+
+      console.log(snapshots);
+      this.props.firebase.slides().orderByKey().startAt(last).on("child_added", function(snapshot) {
+        console.log('sonee', snapshot.val())
+      });
+    })
 
     // deal with queue
-    console.log(this.props.firebase.slides())
-    this.props.firebase.slides().on('value', snapshot => {
-      console.log(snapshot.val());
-    })
   }
 
   componentWillUnmount() {
