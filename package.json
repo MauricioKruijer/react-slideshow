@@ -1,0 +1,8 @@
+{
+  "name": "react-slideshow",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Mauricio Kruijer <mauricio.kruijer@gmail.com>",
+  "license": "MIT",
+  "private": true
+}
