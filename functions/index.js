@@ -45,13 +45,33 @@ exports.ProcessImage = functions.storage.object().onFinalize(object => {
   return storage.bucket(bucket).file(name).download({destination: tempLocalFile}).then(() => {
     console.log('prep to run identify command from imagick')
     // Get Metadata from image.
-    return spawn('identify', ['-verbose', tempLocalFile], {capture: ['stdout', 'stderr']})
+    return spawn('identify', ['-format', '%wx%h', tempLocalFile], {capture: ['stdout', 'stderr']})
   }).then((result) => {
-    console.log('triggerd running followup')
+    console.log('format stuff please')
+    console.log('stderr checken', result.stderr)
+    if (result.stderr) {
+      return false;
+    }
+
     // Save metadata to realtime datastore.
     metadata = result.stdout;
     // metadata = imageMagickOutputToObject(result.stdout);
     console.log(metadata);
+    const [width, height] = metadata.split('x')
+    console.log('Zonder quotes',
+      {
+        width,
+        height
+      }
+    )
+
+    const werktDit = {
+      name,
+      type: 'image',
+      meta: { width, height }
+    };
+
+    admin.database().ref('slides').push(werktDit)
     return true
     // const safeKey = makeKeyFirebaseCompatible(name);
     // return admin.database().ref(safeKey).set(metadata);
