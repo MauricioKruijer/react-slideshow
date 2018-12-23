@@ -56,7 +56,7 @@ class Upload extends Component {
           />
           <label>Avatar:</label>
           {this.state.isUploading && <p>Progress: {this.state.progress}</p>}
-          {this.state.avatarURL && <img src={this.state.avatarURL} />}
+          {this.state.avatarURL && <img alt="" src={this.state.avatarURL} />}
 
           <FileUploader
             accept="video/*,image/*"
