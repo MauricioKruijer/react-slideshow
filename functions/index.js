@@ -47,31 +47,20 @@ exports.ProcessImage = functions.storage.object().onFinalize(object => {
     // Get Metadata from image.
     return spawn('identify', ['-format', '%wx%h', tempLocalFile], {capture: ['stdout', 'stderr']})
   }).then((result) => {
-    console.log('format stuff please')
-    console.log('stderr checken', result.stderr)
     if (result.stderr) {
+      console.log('stderr checken', result.stderr)
       return false;
     }
 
     // Save metadata to realtime datastore.
     metadata = result.stdout;
-    // metadata = imageMagickOutputToObject(result.stdout);
-    console.log(metadata);
     const [width, height] = metadata.split('x')
-    console.log('Zonder quotes',
-      {
-        width,
-        height
-      }
-    )
 
-    const werktDit = {
+    admin.database().ref('slides').push({
       name,
       type: 'image',
       meta: { width, height }
-    };
-
-    admin.database().ref('slides').push(werktDit)
+    })
     return true
     // const safeKey = makeKeyFirebaseCompatible(name);
     // return admin.database().ref(safeKey).set(metadata);
