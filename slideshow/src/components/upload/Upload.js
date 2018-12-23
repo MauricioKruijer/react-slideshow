@@ -3,11 +3,9 @@ import FirebaseContext from "../Firebase/Context";
 
 class Upload extends Component {
   componentDidMount() {
-    const newPostKey = this.props.firebase.db.ref().child('slides').push().key;
-
-    this.props.firebase.db.ref(`slides/${newPostKey}`).set({
+    this.props.firebase.db.ref(`slides`).push({
       type: 'image',
-      url: 'jemoeder'
+      url: 'nu met push'
     });
   }
 
