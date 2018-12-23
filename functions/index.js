@@ -1,10 +1,31 @@
 const functions = require('firebase-functions');
 const path = require('path');
 
-// Create and Deploy Your First Cloud Functions
-// https://firebase.google.com/docs/functions/write-firebase-functions
+exports.ProcessImage = functions.storage.object().onFinalize(object => {
+  const {
+    bucket,
+    name,
+    contentType,
+    metageneration
+  } = object;
 
-exports.helloWorld = functions.https.onRequest((request, response) => {
-  console.log('joe, lekker loggen!');
-  response.send("Hello from dinges!");
-});
+  console.log({
+    bucket,
+    name,
+    contentType,
+    metageneration
+  });
+
+  // Exit if this is triggered on a file that is not an image.
+  if (!contentType.startsWith('image/')) {
+    console.log('This is not an image.');
+    return null;
+  }
+
+  // Get the file name.
+  const fileName = path.basename(name);
+
+  console.log('filename', fileName);
+
+  return null;
+})
