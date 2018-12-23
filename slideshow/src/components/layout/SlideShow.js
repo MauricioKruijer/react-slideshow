@@ -4,35 +4,35 @@ import FirebaseContext from '../Firebase/Context';
 
 class SlideShow extends Component {
   state = {
-    currentSlide: {
-      url: '',
-      type: ''
-    },
+    currentSlide: null,
     queue: []
   }
 
   componentDidMount() {
     // deal with firebase socket
     this.props.firebase.slides().once('value', snapshot => {
-      const snapshots = snapshot.val();
-      const keys = Object.keys(snapshots);
+      const slides = snapshot.val();
+      const keys = Object.keys(slides);
       const last = keys[keys.length-1];
 
-      console.log(snapshots);
-      this.props.firebase.slides().orderByKey().startAt(last).on("child_added", function(snapshot) {
-        console.log('sonee', snapshot.val())
+      this.setState({
+        ...this.state,
+        queue: slides,
+      })
+
+      this.props.firebase.slides().orderByKey().startAt(last).on("child_added", snapshot => {
+        const slide = snapshot.val();
+        this.setState({
+          queue: { [`${last}`]: slide, ...this.state.queue }
+        });
+        this.updateCurrentSlide(slide);
       });
     })
 
     // deal with queue
   }
 
-  componentWillUnmount() {
-    // unsubscribe from firebase
-  }
-
   render () {
-    console.log(this.props.firebase)
     return (
       <div>
         <div>
@@ -44,6 +44,18 @@ class SlideShow extends Component {
         </div>
       </div>
     )
+  }
+
+  updateCurrentSlide(slide) {
+    this.props.firebase
+      .storage
+      .ref(slide.name)
+      .getDownloadURL()
+      .then(url => {
+        console.log(url)
+        this.setState({ ...this.state, currentSlide: url })
+        console.log('jonge vette update', this.state)
+      });
   }
 }
 
