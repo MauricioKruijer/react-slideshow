@@ -24,24 +24,25 @@ class Upload extends Component {
 
   handleUploadSuccess = filename => {
     this.setState({ avatar: filename, progress: 100, isUploading: false });
+
     this.props.firebase
       .storage
       .ref('files')
       .child(filename)
       .getDownloadURL()
-      .then(url => this.setState({ avatarURL: url }));
+      .then(url => {
+        this.setState({ avatarURL: url })
+        this.saveFile(url)
+      });
   };
 
-  componentDidMount() {
-    this.props.firebase.db.ref(`slides`).push({
-      type: 'image',
-      url: 'nu met push'
-    });
+  saveFile(url) {
+    this.props.firebase.db.ref('files').push({
+      url: url
+    })
   }
 
   render() {
-    console.log('hoi')
-    console.log(this.props.firebase)
     return (
       <div>
         UPLOAD PAGEEE
