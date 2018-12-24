@@ -1,10 +1,14 @@
 import React, { Component } from 'react';
 import Notifications from '../slideshow/Notification'
+import Slide from '../slideshow/Slide';
 import FirebaseContext from '../Firebase/Context';
 
 class SlideShow extends Component {
   state = {
-    currentSlide: null,
+    currentSlide: {
+      url: null,
+      meta: {}
+    },
     queue: []
   }
 
@@ -41,6 +45,7 @@ class SlideShow extends Component {
         <div>
           Super vette Notifications
           <Notifications/>
+          <Slide slide={this.state.currentSlide}/>
         </div>
       </div>
     )
@@ -53,7 +58,7 @@ class SlideShow extends Component {
       .getDownloadURL()
       .then(url => {
         console.log(url)
-        this.setState({ ...this.state, currentSlide: url })
+        this.setState({ ...this.state, currentSlide: { url, meta: slide.meta }})
         console.log('jonge vette update', this.state)
       });
   }
