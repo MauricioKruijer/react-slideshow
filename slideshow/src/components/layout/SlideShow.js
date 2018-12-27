@@ -52,6 +52,7 @@ class SlideShow extends Component {
     img.onload = () => {
       console.log(slide.name, 'preloaded!');
       let state = {};
+      slide.url = img.src;
 
       if (this.state.currentSlide.name === null) {
         console.log('set current slide (once)')
@@ -94,13 +95,13 @@ class SlideShow extends Component {
         <div>
           Super mooie SLIDE
         </div>
-        <div>
+        <div style={{ height: '80%', position: 'absolute', width: '100%' }}>
           Super vette Notifications
           <Notifications/>
           {
             (this.state.currentSlide && this.state.currentSlide.name) &&
             (this.state.nextSlide && this.state.nextSlide.name) &&
-            <Slide current={this.state.currentSlide} next={this.state.nextSlide} firebase={this.props.firebase}/>
+            <Slide current={this.state.currentSlide} next={this.state.nextSlide} slides={this.state.slides} firebase={this.props.firebase}/>
           }
         </div>
       </div>
