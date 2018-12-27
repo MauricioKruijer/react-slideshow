@@ -20,7 +20,6 @@ class SlideShow extends Component {
       const last = keys[keys.length-1];
 
       this.setState({
-        ...this.state,
         queue: slides,
       })
 
@@ -45,7 +44,7 @@ class SlideShow extends Component {
         <div>
           Super vette Notifications
           <Notifications/>
-          <Slide slide={this.state.currentSlide}/>
+          <Slide slides={this.state.queue} firebase={this.props.firebase}/>
         </div>
       </div>
     )
