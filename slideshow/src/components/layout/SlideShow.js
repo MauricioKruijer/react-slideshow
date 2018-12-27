@@ -6,10 +6,15 @@ import FirebaseContext from '../Firebase/Context';
 class SlideShow extends Component {
   state = {
     currentSlide: {
-      url: null,
+      name: null,
       meta: {}
     },
-    queue: []
+    nextSlide: {
+      name: null,
+      meta: {}
+    },
+    queue: [],
+    slides: [],
   }
 
   componentDidMount() {
@@ -17,37 +22,58 @@ class SlideShow extends Component {
     this.props.firebase.slides().once('value', snapshot => {
       const slides = snapshot.val();
       const keys = Object.keys(slides);
-      const last = keys[keys.length-1];
 
-      this.setState({
-        queue: slides,
+      keys.forEach(key => {
+        const slide = slides[key];
+        this.preloadSlide(slide);
       })
 
-      this.props.firebase.slides().orderByKey().startAt(last).on("child_added", snapshot => {
-        const slide = snapshot.val();
-        this.setState({
-          queue: { [`${last}`]: slide, ...this.state.queue }
-        });
-        this.updateCurrentSlide(slide);
-      });
+      // const last = keys[keys.length-1];
+
+      // this.setState({
+      //   queue: slides,
+      // })
+
+      // this.props.firebase.slides().orderByKey().startAt(last).on("child_added", snapshot => {
+      //   const slide = snapshot.val();
+      //   this.setState({
+      //     queue: { [`${last}`]: slide, ...this.state.queue }
+      //   });
+      //   this.updateCurrentSlide(slide);
+      // });
     })
 
     // deal with queue
   }
 
-  render () {
-    return (
-      <div>
-        <div>
-          Super mooie SLIDE
-        </div>
-        <div>
-          Super vette Notifications
-          <Notifications/>
-          <Slide slides={this.state.queue} firebase={this.props.firebase}/>
-        </div>
-      </div>
-    )
+  preloadSlide(slide) {
+    const img = new Image();
+
+    img.onload = () => {
+      console.log(slide.name, 'preloaded!');
+      let state = {};
+
+      if (this.state.currentSlide.name === null) {
+        console.log('set current slide (once)')
+        state = { currentSlide: slide };
+      }
+
+      if (this.state.nextSlide.name === null && this.state.currentSlide.name !== null) {
+        console.log('set NEXT slide (once)')
+        state = { nextSlide: slide };
+      }
+      console.log({ slides: [slide, ...this.state.slides]})
+
+      this.setState((p) => ({...p, ...state, slides: [slide, ...this.state.slides]}));
+    }
+
+    this.props.firebase
+      .storage
+      .ref(slide.name)
+      .getDownloadURL()
+      .then(url => {
+        img.src = url;
+      });
   }
 
   updateCurrentSlide(slide) {
@@ -60,6 +86,25 @@ class SlideShow extends Component {
         this.setState({ ...this.state, currentSlide: { url, meta: slide.meta }})
         console.log('jonge vette update', this.state)
       });
+  }
+
+  render () {
+    return (
+      <div>
+        <div>
+          Super mooie SLIDE
+        </div>
+        <div>
+          Super vette Notifications
+          <Notifications/>
+          {
+            (this.state.currentSlide && this.state.currentSlide.name) &&
+            (this.state.nextSlide && this.state.nextSlide.name) &&
+            <Slide current={this.state.currentSlide} next={this.state.nextSlide} firebase={this.props.firebase}/>
+          }
+        </div>
+      </div>
+    )
   }
 }
 
