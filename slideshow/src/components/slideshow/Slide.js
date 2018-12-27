@@ -64,14 +64,23 @@ const RewindSpring = ({ children, style, hideProgress }) => (
 
 class Slide extends Component {
   render() {
+    console.log('hoevaak',this.props)
     return (
       <RewindSpring>
         {x => (
           <>
-            <animated.div style={{ opacity: x.interpolate({ range: [0.75,1.0], output: [0,1] }), transform: x.interpolate({ range: [0.75,1.0], output: [-40,0], extrapolate: 'clamp' }).interpolate(x => `translate3d(0,${x}px,0)`) }}>1</animated.div>
-            <animated.div style={{ opacity: x.interpolate({ range: [0.25,0.5], output: [0,1] }), transform: x.interpolate({ range: [0.25,0.5], output: [-40,0], extrapolate: 'clamp' }).interpolate(x => `translate3d(0,${x}px,0)`) }}>2</animated.div>
-            <animated.div style={{ opacity: x.interpolate({ range: [0.0,0.25], output: [0,1] }), transform: x.interpolate({ range: [0.0,0.25], output: [-40,0], extrapolate: 'clamp' }).interpolate(x => `translate3d(0,${x}px,0)`) }}>3</animated.div>
-            <animated.div style={{ opacity: x.interpolate({ range: [0.5,0.75], output: [0,1] }), transform: x.interpolate({ range: [0.5,0.75], output: [-40,0], extrapolate: 'clamp' }).interpolate(x => `translate3d(0,${x}px,0)`) }}>4</animated.div>
+            <animated.div style={{ opacity: x.interpolate({ range: [0.75,1.0], output: [0,1] }), transform: x.interpolate({ range: [0.75,1.0], output: [-40,0], extrapolate: 'clamp' }).interpolate(x => `translate3d(0,${x}px,0)`) }}>
+              <img alt="" src={this.props.current.url} />
+            </animated.div>
+            <animated.div style={{ opacity: x.interpolate({ range: [0.25,0.5], output: [0,1] }), transform: x.interpolate({ range: [0.25,0.5], output: [-40,0], extrapolate: 'clamp' }).interpolate(x => `translate3d(0,${x}px,0)`) }}>
+              <img alt="" src={this.props.next.url} />
+            </animated.div>
+            <animated.div style={{ opacity: x.interpolate({ range: [0.0,0.25], output: [0,1] }), transform: x.interpolate({ range: [0.0,0.25], output: [-40,0], extrapolate: 'clamp' }).interpolate(x => `translate3d(0,${x}px,0)`) }}>
+              <img alt="" src={this.props.current.url} />
+            </animated.div>
+            <animated.div style={{ opacity: x.interpolate({ range: [0.5,0.75], output: [0,1] }), transform: x.interpolate({ range: [0.5,0.75], output: [-40,0], extrapolate: 'clamp' }).interpolate(x => `translate3d(0,${x}px,0)`) }}>
+              <img alt="" src={this.props.next.url} />
+            </animated.div>
           </>
         )}
       </RewindSpring>
