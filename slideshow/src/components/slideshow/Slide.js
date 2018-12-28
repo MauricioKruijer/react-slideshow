@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { Spring, animated, config } from 'react-spring'
-const { Provider, Consumer } = React.createContext()
 
 class RewindSpringProvider extends React.Component {
   constructor() {
@@ -18,11 +17,11 @@ class RewindSpringProvider extends React.Component {
         reverse={flip}
         from={{ progress: '0%', x: 0 }}
         to={{ progress: '100%', x: 1 }}
-        delay={200}
+        delay={2000}
         config={config.molasses}
         {...props}
         onRest={() => this.setState(state => ({ flip: !state.flip }))}>
-        {props => <Provider value={props} children={children} />}
+        {children}
       </Spring>
     )
   }
@@ -36,30 +35,28 @@ const mau = {
   width: '100%',
 }
 const RewindSpring = ({ children, style, hideProgress }) => (
-  <RewindSpringProvider>
-    <div style={{ overflow: 'hidden', background: '#f4f6f9', color: 'rgb(45, 55, 71)', ...mau, ...style }}>
-      <Consumer>
-        {({ progress, x }) => (
-          <React.Fragment>
-            {children(x)}
-            {!hideProgress && (
-              <animated.div
-                style={{
-                  position: 'absolute',
-                  zIndex: 1000,
-                  left: 0,
-                  bottom: 0,
-                  height: 10,
-                  width: progress,
-                  background: '#ffd500',
-                }}
-              />
-            )}
-          </React.Fragment>
-        )}
-      </Consumer>
-    </div>
-  </RewindSpringProvider>
+  <div style={{ overflow: 'hidden', background: '#f4f6f9', color: 'rgb(45, 55, 71)', ...mau, ...style }}>
+    <RewindSpringProvider>
+      {({ progress, x }) => (
+        <>
+          {children(x)}
+          {!hideProgress && (
+            <animated.div
+              style={{
+                position: 'absolute',
+                zIndex: 1000,
+                left: 0,
+                bottom: 0,
+                height: 10,
+                width: progress,
+                background: '#ffd500',
+              }}
+            />
+          )}
+        </>
+      )}
+    </RewindSpringProvider>
+  </div>
 )
 
 class Slide extends Component {
@@ -70,16 +67,16 @@ class Slide extends Component {
         {x => (
           <>
             <animated.div style={{ opacity: x.interpolate({ range: [0.75,1.0], output: [0,1] }), transform: x.interpolate({ range: [0.75,1.0], output: [-40,0], extrapolate: 'clamp' }).interpolate(x => `translate3d(0,${x}px,0)`) }}>
-              <img alt="" src={this.props.current.url} />
+              1
             </animated.div>
             <animated.div style={{ opacity: x.interpolate({ range: [0.25,0.5], output: [0,1] }), transform: x.interpolate({ range: [0.25,0.5], output: [-40,0], extrapolate: 'clamp' }).interpolate(x => `translate3d(0,${x}px,0)`) }}>
-              <img alt="" src={this.props.next.url} />
+              2
             </animated.div>
             <animated.div style={{ opacity: x.interpolate({ range: [0.0,0.25], output: [0,1] }), transform: x.interpolate({ range: [0.0,0.25], output: [-40,0], extrapolate: 'clamp' }).interpolate(x => `translate3d(0,${x}px,0)`) }}>
-              <img alt="" src={this.props.current.url} />
+              3
             </animated.div>
             <animated.div style={{ opacity: x.interpolate({ range: [0.5,0.75], output: [0,1] }), transform: x.interpolate({ range: [0.5,0.75], output: [-40,0], extrapolate: 'clamp' }).interpolate(x => `translate3d(0,${x}px,0)`) }}>
-              <img alt="" src={this.props.next.url} />
+              4
             </animated.div>
           </>
         )}

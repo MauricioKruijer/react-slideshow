@@ -37,7 +37,8 @@ class SlideShow extends Component {
   firebaseSlideListener() {
     this.props.firebase.slides().orderByKey().on("child_added", snapshot => {
       const slide = snapshot.val();
-      console.log('child_added jonge fb')
+      console.log(slide, 'child_added jonge fb')
+
       if (this.state.firebaseListener) {
         this.preloadSlide(slide, url => {
           const {nextSlide} = this.state
@@ -48,6 +49,7 @@ class SlideShow extends Component {
           console.log('state madness!!!', this.state)
         })
       } else {
+        // not working as intended right now
         this.setState({firebaseListener: true})
         console.log('firebaseListener state jonge', this.state.firebaseListener)
       }
@@ -84,18 +86,6 @@ class SlideShow extends Component {
       .getDownloadURL()
       .then(url => {
         img.src = url;
-      });
-  }
-
-  updateCurrentSlide(slide) {
-    this.props.firebase
-      .storage
-      .ref(slide.name)
-      .getDownloadURL()
-      .then(url => {
-        console.log(url)
-        this.setState({ ...this.state, currentSlide: { url, meta: slide.meta }})
-        console.log('jonge vette update', this.state)
       });
   }
 
