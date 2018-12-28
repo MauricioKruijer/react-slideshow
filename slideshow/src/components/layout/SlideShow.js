@@ -15,6 +15,7 @@ class SlideShow extends Component {
     },
     queue: [],
     slides: [],
+    firebaseListener: false
   }
 
   componentDidMount() {
@@ -28,31 +29,40 @@ class SlideShow extends Component {
         this.preloadSlide(slide);
       })
 
-      // const last = keys[keys.length-1];
-
-      // this.setState({
-      //   queue: slides,
-      // })
-
-      // this.props.firebase.slides().orderByKey().startAt(last).on("child_added", snapshot => {
-      //   const slide = snapshot.val();
-      //   this.setState({
-      //     queue: { [`${last}`]: slide, ...this.state.queue }
-      //   });
-      //   this.updateCurrentSlide(slide);
-      // });
+      this.firebaseSlideListener()
     })
 
-    // deal with queue
   }
 
-  preloadSlide(slide) {
+  firebaseSlideListener() {
+    this.props.firebase.slides().orderByKey().on("child_added", snapshot => {
+      const slide = snapshot.val();
+      console.log('child_added jonge fb')
+      if (this.state.firebaseListener) {
+        this.preloadSlide(slide, url => {
+          const {nextSlide} = this.state
+          this.setState({
+            nextSlide: {url: url, ...slide},
+            currentSlide: nextSlide
+          })
+          console.log('state madness!!!', this.state)
+        })
+      } else {
+        this.setState({firebaseListener: true})
+        console.log('firebaseListener state jonge', this.state.firebaseListener)
+      }
+    });
+  }
+
+  preloadSlide(slide, cb) {
     const img = new Image();
 
     img.onload = () => {
       console.log(slide.name, 'preloaded!');
       let state = {};
       slide.url = img.src;
+
+      cb && cb(slide.url);
 
       if (this.state.currentSlide.name === null) {
         console.log('set current slide (once)')
