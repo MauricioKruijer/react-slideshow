@@ -19,65 +19,41 @@ class SlideShow extends Component {
   }
 
   componentDidMount() {
-    // deal with firebase socket
     this.props.firebase.slides().once('value', snapshot => {
       const slides = snapshot.val();
       const keys = Object.keys(slides);
 
       keys.forEach(key => {
         const slide = slides[key];
-        this.preloadSlide(slide);
+        this.preloadSlide(slide, key);
       })
 
-      this.firebaseSlideListener()
+      // start firebase listener to listen to every new entries after the last one that we get from .once('value'...
+      const lastKey = keys[keys.length-1];
+      this.firebaseSlideListener(lastKey)
     })
-
   }
 
-  firebaseSlideListener() {
-    this.props.firebase.slides().orderByKey().on("child_added", snapshot => {
+  firebaseSlideListener(key) {
+    this.props.firebase.slides().orderByKey().startAt(key).on("child_added", snapshot => {
       const slide = snapshot.val();
-      console.log(slide, 'child_added jonge fb')
+      const slideKey = snapshot.key
 
-      if (this.state.firebaseListener) {
-        this.preloadSlide(slide, url => {
-          const {nextSlide} = this.state
-          this.setState({
-            nextSlide: {url: url, ...slide},
-            currentSlide: nextSlide
-          })
-          console.log('state madness!!!', this.state)
-        })
-      } else {
-        // not working as intended right now
-        this.setState({firebaseListener: true})
-        console.log('firebaseListener state jonge', this.state.firebaseListener)
+      if (key !== slideKey) {
+        this.preloadSlide(slide, key)
       }
     });
   }
 
-  preloadSlide(slide, cb) {
+  preloadSlide(slide, key) {
     const img = new Image();
 
     img.onload = () => {
-      console.log(slide.name, 'preloaded!');
-      let state = {};
       slide.url = img.src;
+      slide.key = key
 
-      cb && cb(slide.url);
-
-      if (this.state.currentSlide.name === null) {
-        console.log('set current slide (once)')
-        state = { currentSlide: slide };
-      }
-
-      if (this.state.nextSlide.name === null && this.state.currentSlide.name !== null) {
-        console.log('set NEXT slide (once)')
-        state = { nextSlide: slide };
-      }
-      console.log({ slides: [slide, ...this.state.slides]})
-
-      this.setState((p) => ({...p, ...state, slides: [slide, ...this.state.slides]}));
+      this.setState((prevState) => ({slides: [slide, ...prevState.slides]}));
+      console.log(this.state)
     }
 
     this.props.firebase
@@ -101,7 +77,7 @@ class SlideShow extends Component {
           {
             (this.state.currentSlide && this.state.currentSlide.name) &&
             (this.state.nextSlide && this.state.nextSlide.name) &&
-            <Slide current={this.state.currentSlide} next={this.state.nextSlide} slides={this.state.slides} firebase={this.props.firebase}/>
+            <Slide current={this.state.currentSlide} next={this.state.nextSlide} />
           }
         </div>
       </div>
