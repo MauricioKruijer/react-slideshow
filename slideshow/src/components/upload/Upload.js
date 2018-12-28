@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import FirebaseContext from "../Firebase/Context";
 import FileUploader from 'react-firebase-file-uploader'
 
+import './upload.css';
+
 class Upload extends Component {
   state = {
     username: "",
@@ -44,20 +46,9 @@ class Upload extends Component {
 
   render() {
     return (
-      <div>
-        UPLOAD PAGEEE
+      <div className="upload">
+        <h1>Upload your best image</h1>
         <form>
-          <label>Username:</label>
-          <input
-            type="text"
-            value={this.state.username}
-            name="username"
-            onChange={this.handleChangeUsername}
-          />
-          <label>Avatar:</label>
-          {this.state.isUploading && <p>Progress: {this.state.progress}</p>}
-          {this.state.avatarURL && <img alt="" src={this.state.avatarURL} />}
-
           <FileUploader
             accept="video/*,image/*"
             name="avatar"
@@ -69,6 +60,13 @@ class Upload extends Component {
             onProgress={this.handleProgress}
             metadata={{cacheControl: 'max-age=300'}}
           />
+
+          {this.state.avatarURL
+            ? <img alt="" src={this.state.avatarURL} height={300}  />
+            : <p>Drag your files here or click in this area.</p>
+          }
+
+          <button type="submit">Upload</button>
         </form>
       </div>
     );
