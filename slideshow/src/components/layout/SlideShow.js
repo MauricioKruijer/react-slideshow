@@ -27,10 +27,10 @@ class SlideShow extends Component {
   currentIndex = 0;
 
   state = {
-    currentItems: [],
-    nextItems: [],
+    topItems: [],
+    bottomItems: [],
     layout: 'one',
-    duration: 200,
+    flip: false,
   }
 
   componentDidMount() {
@@ -41,41 +41,57 @@ class SlideShow extends Component {
       keys.forEach(key => {
         const slide = slides[key];
         this.preloadSlide(slide, key);
-      })
+      });
 
       // start firebase listener to listen to every new entries after the last one that we get from .once('value'...
       const lastKey = keys[keys.length-1];
       this.firebaseSlideListener(lastKey)
-      this.startSlideTransitionQueue();
+
+      const yolo = setInterval(() => {
+        if (this.slides.length < 2) return;
+
+        this.startSlideTransitionQueue();
+        clearInterval(yolo);
+      }, 500);
     })
   }
 
-  startSlideTransitionQueue = () => {
-    this.transitionQueue = setInterval(() => {
-      console.log('Can we run?', {
-        canRunAfter: this.canRunAfter,
-        now: Date.now(),
-        CAN_CONTINUE: this.canRunAfter > Date.now(),
-      });
+  getTarget = () => {
+    return this.state.flip ? 'topItems' : 'bottomItems';
+  }
 
+  getNextIndex = () => {
+    return (this.currentIndex + 1) % this.slides.length;
+  }
+
+  startSlideTransitionQueue = () => {
+    const duration = 5000;
+
+    this.setState(() => ({
+      topItems: [this.findCurrentItem()],
+      bottomItems: [this.slides[this.getNextIndex()]],
+    }), () => {
+      this.currentIndex = this.getNextIndex();
+    });
+
+    this.slideTransitionQueue = setInterval(() => {
       if (this.canRunAfter > Date.now()) return;
 
-      const duration = 5000;
-
-      const nextIndex = (this.currentIndex + 1) % this.slides.length;
-
       this.setState(() => ({
-        currentItems: [this.findCurrentItem()],
-        nextItems: [this.slides[nextIndex]]
+        [this.getTarget()]: [this.findCurrentItem()],
       }), () => {
         this.canRunAfter = Date.now() + duration;
-        this.currentIndex = nextIndex;
+        this.currentIndex = this.getNextIndex();
+        this.setState((prevState) => ({
+          flip: !prevState.flip,
+        }));
       });
     }, 1000);
   }
 
   findCurrentItem() {
     const currentSlide = this.slides[this.currentIndex];
+
     if (this.prioritySlides.length > 0) {
       return this.prioritySlides.shift();
     }
@@ -118,15 +134,21 @@ class SlideShow extends Component {
   }
 
   render () {
-    const { layout, currentItems, nextItems } = this.state;
+    const { layout, topItems, bottomItems, flip } = this.state;
     const SlideComponent = SlideComponents[layout];
 
-    console.log('RERENDER', { slidesLength: this.slides.length });
-    if (!this.slides.length) return null;
+    console.log({ topItems, bottomItems });
+
+    if (!topItems.length && !bottomItems.length) return null;
 
     return (
       <>
-        <SlideComponent items={currentItems} />
+        <div style={{ transition: 'opacity 1s', opacity: flip ? 0 : 1 }}>
+          <SlideComponent items={topItems} />
+        </div>
+        <div style={{ transition: 'opacity 1s', opacity: flip ? 1 : 0 }}>
+          <SlideComponent items={bottomItems} />
+        </div>
       </>
     );
   }
