@@ -143,10 +143,10 @@ class SlideShow extends Component {
 
     return (
       <>
-        <div style={{ transition: 'opacity 1s', opacity: flip ? 0 : 1 }}>
+        <div style={{ transition: 'opacity 2s', opacity: flip ? 0 : 1 }}>
           <SlideComponent items={topItems} />
         </div>
-        <div style={{ transition: 'opacity 1s', opacity: flip ? 1 : 0 }}>
+        <div style={{ transition: 'opacity 2s', opacity: flip ? 1 : 0 }}>
           <SlideComponent items={bottomItems} />
         </div>
       </>

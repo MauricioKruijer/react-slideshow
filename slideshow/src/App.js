@@ -13,13 +13,10 @@ class App extends Component {
     return (
       <FirebaseContext.Provider value={fb}>
         <BrowserRouter>
-          <div className="App">
-            <Navbar/>
-            <Switch>
-              <Route exact path="/" component={SlideShow} />
-              <Route path="/upload" component={Upload} />
-            </Switch>
-          </div>
+          <Switch>
+            <Route exact path="/" component={SlideShow} />
+            <Route path="/upload" component={Upload} />
+          </Switch>
         </BrowserRouter>
       </FirebaseContext.Provider>
     );
