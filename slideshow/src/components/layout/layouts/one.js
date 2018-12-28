@@ -1,10 +1,7 @@
 import React from 'react';
 
-const One = ({ slides, queue }) => {
-  const hasPriorityItems = queue.priority.length > 0;
-  const currentItem = hasPriorityItems
-    ? queue.priority[0]
-    : slides[queue.currentSlideIndex];
+const One = ({ items }) => {
+  const currentItem = items[0]
 
   return (
     <div className="yolo" style={{

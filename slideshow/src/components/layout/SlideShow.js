@@ -22,24 +22,14 @@ const SlideComponents = {
 
 class SlideShow extends Component {
   canRunAfter = Date.now();
+  slides = [];
+  currentIndex = 0;
 
   state = {
-    currentSlide: {
-      name: null,
-      meta: {}
-    },
-    nextSlide: {
-      name: null,
-      meta: {}
-    },
-    queue: {
-      currentSlideIndex: 0,
-      priority: [],
-      layout: 'one',
-      duration: 200,
-    },
-    slides: [],
-    firebaseListener: false
+    currentItems: [],
+    nextItems: [],
+    layout: 'one',
+    duration: 200,
   }
 
   componentDidMount() {
@@ -71,15 +61,14 @@ class SlideShow extends Component {
 
       const duration = 5000;
 
-      this.setState((prevState) => ({
-        queue: {
-          currentSlideIndex: findNextIndex(prevState.slides, prevState.queue.currentSlideIndex),
-          priority: [],
-          layout: 'one',
-          duration,
-        },
+      const nextIndex = (this.currentIndex + 1) % this.slides.length;
+
+      this.setState(() => ({
+        currentItems: [this.slides[this.currentIndex]],
+        nextItems: [this.slides[nextIndex]]
       }), () => {
         this.canRunAfter = Date.now() + duration;
+        this.currentIndex = nextIndex;
       });
     }, 1000);
   }
@@ -102,8 +91,7 @@ class SlideShow extends Component {
       slide.url = img.src;
       slide.key = key
 
-      this.setState((prevState) => ({slides: [slide, ...prevState.slides]}));
-      console.log(this.state)
+      this.slides = [slide, ...this.slides];
     }
 
     this.props.firebase
@@ -116,13 +104,17 @@ class SlideShow extends Component {
   }
 
   render () {
-    const { queue, slides } = this.state;
-    const SlideComponent = SlideComponents[queue.layout];
+    const { layout, currentItems, nextItems } = this.state;
+    const SlideComponent = SlideComponents[layout];
 
-    console.log('RERENDER', { slidesLength: slides.length });
-    if (!slides.length) return null;
+    console.log('RERENDER', { slidesLength: this.slides.length });
+    if (!this.slides.length) return null;
 
-    return <SlideComponent slides={slides} queue={queue} />;
+    return (
+      <>
+        <SlideComponent items={currentItems} />
+      </>
+    );
   }
 }
 
