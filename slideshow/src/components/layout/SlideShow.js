@@ -3,7 +3,26 @@ import Notifications from '../slideshow/Notification'
 import Slide from '../slideshow/Slide';
 import FirebaseContext from '../Firebase/Context';
 
+import One from './layouts/one';
+
+const findNextIndex = (arr, currIndex) => {
+  const lastIndex = arr.length ? arr.length - 1 : 0;
+  const nextIndex = currIndex + 1;
+
+  if (nextIndex > lastIndex) {
+    return 0;
+  }
+
+  return nextIndex;
+}
+
+const SlideComponents = {
+  one: One,
+};
+
 class SlideShow extends Component {
+  canRunAfter = Date.now();
+
   state = {
     currentSlide: {
       name: null,
@@ -13,7 +32,12 @@ class SlideShow extends Component {
       name: null,
       meta: {}
     },
-    queue: [],
+    queue: {
+      currentSlideIndex: 0,
+      priority: [],
+      layout: 'one',
+      duration: 200,
+    },
     slides: [],
     firebaseListener: false
   }
@@ -31,7 +55,33 @@ class SlideShow extends Component {
       // start firebase listener to listen to every new entries after the last one that we get from .once('value'...
       const lastKey = keys[keys.length-1];
       this.firebaseSlideListener(lastKey)
+      this.startSlideTransitionQueue();
     })
+  }
+
+  startSlideTransitionQueue = () => {
+    this.transitionQueue = setInterval(() => {
+      console.log('Can we run?', {
+        canRunAfter: this.canRunAfter,
+        now: Date.now(),
+        CAN_CONTINUE: this.canRunAfter > Date.now(),
+      });
+
+      if (this.canRunAfter > Date.now()) return;
+
+      const duration = 5000;
+
+      this.setState((prevState) => ({
+        queue: {
+          currentSlideIndex: findNextIndex(prevState.slides, prevState.queue.currentSlideIndex),
+          priority: [],
+          layout: 'one',
+          duration,
+        },
+      }), () => {
+        this.canRunAfter = Date.now() + duration;
+      });
+    }, 1000);
   }
 
   firebaseSlideListener(key) {
@@ -66,22 +116,13 @@ class SlideShow extends Component {
   }
 
   render () {
-    return (
-      <div>
-        <div>
-          Super mooie SLIDE
-        </div>
-        <div style={{ height: '80%', position: 'absolute', width: '100%' }}>
-          Super vette Notifications
-          <Notifications/>
-          {
-            (this.state.currentSlide && this.state.currentSlide.name) &&
-            (this.state.nextSlide && this.state.nextSlide.name) &&
-            <Slide current={this.state.currentSlide} next={this.state.nextSlide} />
-          }
-        </div>
-      </div>
-    )
+    const { queue, slides } = this.state;
+    const SlideComponent = SlideComponents[queue.layout];
+
+    console.log('RERENDER', { slidesLength: slides.length });
+    if (!slides.length) return null;
+
+    return <SlideComponent slides={slides} queue={queue} />;
   }
 }
 
