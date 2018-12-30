@@ -63,9 +63,9 @@ exports.ProcessImage = functions.storage.object().onFinalize((object) => {
     // Download file from bucket.
     return file.download({destination: tempLocalFile});
   }).then(() => {
-    console.log('The file has been downloaded to', tempLocalFile);
+    console.log('The file has been downloaded to ADDED NEW LINE', tempLocalFile);
     // Generate a thumbnail using ImageMagick.
-    return spawn('identify', ['-format', '%wx%h', tempLocalFile], {capture: ['stdout', 'stderr']});
+    return spawn('identify', ['-format', '%wx%h\n', tempLocalFile], {capture: ['stdout', 'stderr']});
   // }).then((capture) => {
   //   if (capture.stderr) {
   //     console.log('Shit errorrrr')
@@ -79,21 +79,51 @@ exports.ProcessImage = functions.storage.object().onFinalize((object) => {
         console.log('Shit errorrrr')
         console.error(capture.stderr)
       }
-      return capture.stdout.split('x')
+    const [width, height] = capture.stdout.split('x');
+      return {
+        width, height
+      }
     // console.log('Thumbnail created at', tempLocalThumbFile);
     // Uploading the Thumbnail.
     // return bucket.upload(tempLocalThumbFile, {destination: thumbFilePath, metadata: metadata});
-  }).then((dimensions) => {
+  }).then((meta) => {
+    console.log('--- CHECK IF GIF VOOR SPAN PROMISE')
+    if (contentType === 'image/gif') {
+      console.log('--- TRIGGER SPAWN')
+      return new Promise((resolve, reject) => {
+        spawn('identify', ['-format', '%wx%h\n', tempLocalFile], {capture: ['stdout', 'stderr']})
+          .then(capture => {
+            console.log('JONGE 2e SPAN', capture)
+            if (capture.stderr) {
+              console.log('Shit errorrrr')
+              console.error(capture.stderr)
+              return reject(capture.stderr)
+            }
+            console.log('OUPTUT SPAWN 2', capture.stdout)
+
+            resolve(meta);
+          })
+      });
+    }
+    console.log('--- BOEIE HOEFT NIET META TERUG')
+    return meta
+  }).then((meta) => {
+    if (contentType === 'image/gif') {
+      console.log('===GIF FOUND IN PROCESSING!')
+
+    }
+    return meta;
+  }).then((meta) => {
     console.log('Thumbnail uploaded to Storage at', thumbFilePath);
     // Once the image has been uploaded delete the local files to free up disk space.
     // fs.unlinkSync(tempLocalFile);
     // fs.unlinkSync(tempLocalThumbFile);
-    const [width, height] = dimensions;
+    // const [width, height] = dimensions;
 
     return admin.database().ref('slides').push({
       name,
       type: 'image',
-      meta: { width, height }
+      meta
     })
 
     // return {
@@ -116,17 +146,32 @@ exports.ProcessImage = functions.storage.object().onFinalize((object) => {
     // const originalResult = results[1];
     // const thumbFileUrl = thumbResult[0];
     // const fileUrl = originalResult[0]
-    console.log('resultsssss', results)
+    // console.log('resultsssss', results)
 
-   return admin.database().ref('thumb-slides').push({
-      name,
-      type: 'image',
-      name: results.thumbFilePath
-      // path: fileUrl,
-      // thumbnail: thumbFileUrl
-      // meta: { width, height }
-    })
+   // return admin.database().ref('thumb-slides').push({
+   //    name,
+   //    type: 'image',
+   //    name: results.thumbFilePath
+   //    // path: fileUrl,
+   //    // thumbnail: thumbFileUrl
+   //    // meta: { width, height }
+   //  })
     // Add the URLs to the Database
-    return admin.database().ref('images').push({});
+    // return admin.database().ref('images').push({});
   }).then(() => console.log('Thumbnail URLs saved to database.'));
+});
+exports.GifTime = functions.storage.object().onFinalize((object) => {
+  // File and directory paths.
+  const filePath = object.name;
+  const name = object.name;
+  const contentType = object.contentType; // This is the image MIME type
+  const fileDir = path.dirname(filePath);
+  const fileName = path.basename(filePath);
+  const thumbFilePath = path.normalize(path.join(fileDir, `${THUMB_PREFIX}${fileName}`));
+  const tempLocalFile = path.join(os.tmpdir(), filePath);
+  const tempLocalDir = path.dirname(tempLocalFile);
+  const tempLocalThumbFile = path.join(os.tmpdir(), thumbFilePath);
+
+  console.log('GOT AN IMAGE', contentType)
+  return null
 });
