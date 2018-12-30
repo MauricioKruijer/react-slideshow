@@ -1,30 +1,40 @@
+// return spawn('identify', ['-format', '%wx%h', tempLocalFile], {capture: ['stdout', 'stderr']})
 const functions = require('firebase-functions');
+const mkdirp = require('mkdirp-promise');
+// Include a Service Account Key to use a Signed URL
+// const gcs = require('@google-cloud/storage')({});
+const {Storage} = require('@google-cloud/storage');
+const storage = new Storage()
 const admin = require('firebase-admin');
 admin.initializeApp();
-
-const {Storage} = require('@google-cloud/storage');
 const spawn = require('child-process-promise').spawn;
-const fs = require('fs');
-const crypto = require('crypto');
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 
-const storage = new Storage();
+// Max height and width of the thumbnail in pixels.
+const THUMB_MAX_HEIGHT = 200;
+const THUMB_MAX_WIDTH = 200;
+// Thumbnail prefix added to file names.
+const THUMB_PREFIX = 'thumb_';
 
-exports.ProcessImage = functions.storage.object().onFinalize(object => {
-  const {
-    bucket,
-    name,
-    contentType,
-    metageneration
-  } = object;
-
-  console.log({
-    bucket,
-    name,
-    contentType,
-    metageneration
-  });
+/**
+ * When an image is uploaded in the Storage bucket We generate a thumbnail automatically using
+ * ImageMagick.
+ * After the thumbnail has been generated and uploaded to Cloud Storage,
+ * we write the public URL to the Firebase Realtime Database.
+ */
+exports.ProcessImage = functions.storage.object().onFinalize((object) => {
+  // File and directory paths.
+  const filePath = object.name;
+  const name = object.name;
+  const contentType = object.contentType; // This is the image MIME type
+  const fileDir = path.dirname(filePath);
+  const fileName = path.basename(filePath);
+  const thumbFilePath = path.normalize(path.join(fileDir, `${THUMB_PREFIX}${fileName}`));
+  const tempLocalFile = path.join(os.tmpdir(), filePath);
+  const tempLocalDir = path.dirname(tempLocalFile);
+  const tempLocalThumbFile = path.join(os.tmpdir(), thumbFilePath);
 
   // Exit if this is triggered on a file that is not an image.
   if (!contentType.startsWith('image/')) {
@@ -32,85 +42,91 @@ exports.ProcessImage = functions.storage.object().onFinalize(object => {
     return null;
   }
 
-  // Create random filename with same extension as uploaded file.
-  const randomFileName = crypto.randomBytes(20).toString('hex') + path.extname(name);
-  const tempLocalFile = path.join(os.tmpdir(), randomFileName);
+  // Exit if the image is already a thumbnail.
+  if (fileName.startsWith(THUMB_PREFIX)) {
+    console.log('Already a Thumbnail.');
+    return null;
+  }
 
-  console.log('getting in to shit', {
-    randomFileName,
-    tempLocalFile
-  })
-  let metadata;
-  // Download file from bucket.
-  return storage.bucket(bucket).file(name).download({destination: tempLocalFile}).then(() => {
-    console.log('prep to run identify command from imagick')
-    // Get Metadata from image.
-    return spawn('identify', ['-format', '%wx%h', tempLocalFile], {capture: ['stdout', 'stderr']})
-  }).then((result) => {
-    if (result.stderr) {
-      console.log('stderr checken', result.stderr)
-      return false;
-    }
+  // Cloud Storage files.
+  const bucket = storage.bucket(object.bucket);
+  const file = bucket.file(filePath);
+  const thumbFile = bucket.file(thumbFilePath);
+  const metadata = {
+    contentType: contentType,
+    // To enable Client-side caching you can set the Cache-Control headers here. Uncomment below.
+    // 'Cache-Control': 'public,max-age=3600',
+  };
 
-    // Save metadata to realtime datastore.
-    metadata = result.stdout;
-    const [width, height] = metadata.split('x')
+  // Create the temp directory where the storage file will be downloaded.
+  return mkdirp(tempLocalDir).then(() => {
+    // Download file from bucket.
+    return file.download({destination: tempLocalFile});
+  }).then(() => {
+    console.log('The file has been downloaded to', tempLocalFile);
+    // Generate a thumbnail using ImageMagick.
+    return spawn('identify', ['-format', '%wx%h', tempLocalFile], {capture: ['stdout', 'stderr']});
+  // }).then((capture) => {
+  //   if (capture.stderr) {
+  //     console.log('Shit errorrrr')
+  //     console.error(capture.stderr)
+  //   }
+  //   const [width, height] = capture.stdout.split('x')
+  //   console.log('width x height from identify', {width, height})
+  //   return spawn('convert', [tempLocalFile, '-thumbnail', `${width-1}x${height-1}>`, tempLocalThumbFile], {capture: ['stdout', 'stderr']});
+  }).then((capture) => {
+      if (capture.stderr) {
+        console.log('Shit errorrrr')
+        console.error(capture.stderr)
+      }
+      return capture.stdout.split('x')
+    // console.log('Thumbnail created at', tempLocalThumbFile);
+    // Uploading the Thumbnail.
+    // return bucket.upload(tempLocalThumbFile, {destination: thumbFilePath, metadata: metadata});
+  }).then((dimensions) => {
+    console.log('Thumbnail uploaded to Storage at', thumbFilePath);
+    // Once the image has been uploaded delete the local files to free up disk space.
+    // fs.unlinkSync(tempLocalFile);
+    // fs.unlinkSync(tempLocalThumbFile);
+    const [width, height] = dimensions;
 
-    admin.database().ref('slides').push({
+    return admin.database().ref('slides').push({
       name,
       type: 'image',
       meta: { width, height }
     })
-    return true
-    // const safeKey = makeKeyFirebaseCompatible(name);
-    // return admin.database().ref(safeKey).set(metadata);
-  }).then(() => {
-    // console.log('Wrote to:', name, 'data:', metadata);
-    return null;
-  }).then(() => {
-    // Cleanup temp directory after metadata is extracted
-    // Remove the file from temp directory
-    return fs.unlinkSync(tempLocalFile)
-  }).then(() => {
-    console.log('cleanup successful!');
-    return null;
-  });
-})
 
-/**
- * Convert the output of ImageMagick's `identify -verbose` command to a JavaScript Object.
- */
-function imageMagickOutputToObject(output) {
-  let previousLineIndent = 0;
-  const lines = output.match(/[^\r\n]+/g);
-  lines.shift(); // Remove First line
-  lines.forEach((line, index) => {
-    const currentIdent = line.search(/\S/);
-    line = line.trim();
-    if (line.endsWith(':')) {
-      lines[index] = makeKeyFirebaseCompatible(`"${line.replace(':', '":{')}`);
-    } else {
-      const split = line.replace('"', '\\"').split(': ');
-      split[0] = makeKeyFirebaseCompatible(split[0]);
-      lines[index] = `"${split.join('":"')}",`;
-    }
-    if (currentIdent < previousLineIndent) {
-      lines[index - 1] = lines[index - 1].substring(0, lines[index - 1].length - 1);
-      lines[index] = new Array(1 + (previousLineIndent - currentIdent) / 2).join('}') + ',' + lines[index];
-    }
-    previousLineIndent = currentIdent;
-  });
-  output = lines.join('');
-  output = '{' + output.substring(0, output.length - 1) + '}'; // remove trailing comma.
-  output = JSON.parse(output);
-  console.log('Metadata extracted from image', output);
-  return output;
-}
+    // return {
+    //   thumbFilePath,
+    //   tempLocalFile,
+    //   tempLocalThumbFile,
+    // }
+    // // Get the Signed URLs for the thumbnail and original image.
+    // const config = {
+    //   action: 'read',
+    //   expires: '03-01-2500',
+    // };
+    // return Promise.all([
+    //   thumbFile.getSignedUrl(config),
+    //   file.getSignedUrl(config),
+    // ]);
+  }).then((results) => {
+    console.log('Got Signed URLs.');
+    // const thumbResult = results[0];
+    // const originalResult = results[1];
+    // const thumbFileUrl = thumbResult[0];
+    // const fileUrl = originalResult[0]
+    console.log('resultsssss', results)
 
-/**
- * Makes sure the given string does not contain characters that can't be used as Firebase
- * Realtime Database keys such as '.' and replaces them by '*'.
- */
-function makeKeyFirebaseCompatible(key) {
-  return key.replace(/\./g, '*');
-}
+   return admin.database().ref('thumb-slides').push({
+      name,
+      type: 'image',
+      name: results.thumbFilePath
+      // path: fileUrl,
+      // thumbnail: thumbFileUrl
+      // meta: { width, height }
+    })
+    // Add the URLs to the Database
+    return admin.database().ref('images').push({});
+  }).then(() => console.log('Thumbnail URLs saved to database.'));
+});
