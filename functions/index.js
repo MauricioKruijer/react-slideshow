@@ -91,22 +91,39 @@ exports.ProcessImage = functions.storage.object().onFinalize((object) => {
     if (contentType === 'image/gif') {
       console.log('--- TRIGGER SPAWN')
       return new Promise((resolve, reject) => {
-        spawn('identify', ['-format', '%wx%h\n', tempLocalFile], {capture: ['stdout', 'stderr']})
+        spawn('identify', ['-format', '%T\n', tempLocalFile], {capture: ['stdout', 'stderr']})
           .then(capture => {
-            console.log('JONGE 2e SPAN', capture)
+            console.log('-- Deeper in spawn')
             if (capture.stderr) {
               console.log('Shit errorrrr')
               console.error(capture.stderr)
               return reject(capture.stderr)
             }
-            console.log('OUPTUT SPAWN 2', capture.stdout)
+            console.log('capture.stdout', capture.stdout)
+            const sizes = capture.stdout.split(/\n/);
+            let frameCount = 0;
+            sizes.forEach(size => {
+              if (parseInt(size, 10)) {
+                console.log ('foreach heh...', size, parseInt(size, 10))
+                frameCount+= parseInt(size, 10);
+              }
+            })
 
-            resolve(meta);
+            console.log('FRAMECOUNT whyyy', frameCount, frameCount * 10)
+
+            resolve({
+              ...meta,
+              duration: frameCount * 10
+            });
           })
       });
     }
     console.log('--- BOEIE HOEFT NIET META TERUG')
-    return meta
+
+    return {
+      ...meta,
+      duration: 5000
+    };
   }).then((meta) => {
     if (contentType === 'image/gif') {
       console.log('===GIF FOUND IN PROCESSING!')
