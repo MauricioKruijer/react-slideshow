@@ -167,5 +167,20 @@ class SlideShow extends Component {
 }
 
 export default (props) => <FirebaseContext.Consumer>
-  { firebase => <SlideShow firebase={firebase} {...props}/> }
+  { firebase =>
+    <div>
+      <div style={{
+        position: 'absolute',
+        height: '100px',
+        margin: 0,
+        padding: 0,
+        top: 0,
+        zIndex: 100,
+        textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
+      }}>
+        <h1>Visit http://mau.house to upload</h1>
+      </div>
+      <SlideShow firebase={firebase} {...props}/>
+    </div>
+     }
 </FirebaseContext.Consumer>
