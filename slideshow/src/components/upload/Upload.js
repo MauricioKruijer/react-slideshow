@@ -13,7 +13,7 @@ class Upload extends Component {
     avatarURL: '',
   };
 
-  handleUploadStart = () => this.setState({ isUploading: true, progress: 0 });
+  handleUploadStart = () => this.setState({ isUploading: true, progress: 0, avatarURL: '' });
 
   handleProgress = progress => this.setState({ progress });
 
@@ -61,9 +61,16 @@ class Upload extends Component {
             metadata={{ cacheControl: 'max-age=300' }}
           />
 
-          {/* {!isUploading ? <button type="submit">Submit</button> : null} */}
-
-          {avatarURL ? <p>✅</p> : !isUploading ? <span className="rotate">♻️</span> : null}
+          {avatarURL ?
+              <div style={{paddingTop: '90px'}}>
+                <span className="emoji">🍾</span>
+                <h1>Upload another</h1>
+             </div>
+            : isUploading ?
+              <div style={{paddingTop: '90px'}}>
+                <span className="emoji rotate">✈️️</span>
+                <h1>Uploading...</h1>
+              </div> : null}
         </form>
       </div>
     );
