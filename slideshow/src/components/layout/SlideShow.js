@@ -87,7 +87,10 @@ class SlideShow extends Component {
       }), () => {
         let newDuration = this.state[newTarget][0].meta.duration;
 
-        if (this.state.bottomItems[0].name.substr(-3).toLowerCase() === 'gif') {
+        if (
+          this.state[newTarget][0].name.substr(-3).toLowerCase() === 'gif'
+          || this.state[newTarget][0].type === 'video'
+        ) {
           newDuration *= 2
           console.log('double durationnnn', newDuration)
         }
@@ -141,7 +144,18 @@ class SlideShow extends Component {
       .ref(slide.name)
       .getDownloadURL()
       .then(url => {
-        img.src = url;
+        if (slide.type === 'image') {
+          img.src = url;
+        }
+        if (slide.type === 'video') {
+          slide.url = url
+          slide.key = key
+          this.slides = [slide, ...this.slides];
+          if (isPriority) {
+            console.log('prio slides VIDEOO')
+            this.prioritySlides = [...this.prioritySlides, slide];
+          }
+        }
       });
   }
 

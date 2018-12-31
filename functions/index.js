@@ -193,7 +193,7 @@ exports.ProcessVideo = functions.storage.object().onFinalize((object) => {
     // return bucket.upload(finalLocalThumbFile, {destination: thumbFilePath, metadata: metadata});
   }).then((meta) => {
     console.log('==!! UPLOAD TO ', `final_${fileName}.mp4`)
-    return admin.database().ref('video').push({
+    return admin.database().ref('slides').push({
       name:`files/final_${fileName}.mp4`,
       type: 'video',
       meta
