@@ -14,8 +14,8 @@ class App extends Component {
       <FirebaseContext.Provider value={fb}>
         <BrowserRouter>
           <Switch>
-            <Route exact path="/" component={SlideShow} />
-            <Route path="/upload" component={Upload} />
+            <Route exact path="/" component={Upload} />
+            <Route path="/show" component={SlideShow} />
           </Switch>
         </BrowserRouter>
       </FirebaseContext.Provider>
