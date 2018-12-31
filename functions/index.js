@@ -1,12 +1,10 @@
-// return spawn('identify', ['-format', '%wx%h', tempLocalFile], {capture: ['stdout', 'stderr']})
 const functions = require('firebase-functions');
 const mkdirp = require('mkdirp-promise');
-// Include a Service Account Key to use a Signed URL
-// const gcs = require('@google-cloud/storage')({});
 const {Storage} = require('@google-cloud/storage');
 const storage = new Storage()
 const admin = require('firebase-admin');
 admin.initializeApp();
+
 const spawn = require('child-process-promise').spawn;
 const path = require('path');
 const os = require('os');
@@ -32,8 +30,6 @@ exports.ProcessImage = functions.storage.object().onFinalize((object) => {
     return null;
   }
 
-  console.log('=== MAU MAU WE got an Image! ===');
-
   // Cloud Storage files.
   const bucket = storage.bucket(object.bucket);
   const file = bucket.file(filePath);
@@ -45,32 +41,27 @@ exports.ProcessImage = functions.storage.object().onFinalize((object) => {
   }).then(() => {
     console.log('The file has been downloaded to NO new line', tempLocalFile);
     // Generate a thumbnail using ImageMagick.
-    return spawn('identify', ['-format', '%wx%h', tempLocalFile], {capture: ['stdout', 'stderr']});
-  // }).then((capture) => {
-  //   if (capture.stderr) {
-  //     console.log('Shit errorrrr')
-  //     console.error(capture.stderr)
-  //   }
-  //   const [width, height] = capture.stdout.split('x')
-  //   console.log('width x height from identify', {width, height})
-  //   return spawn('convert', [tempLocalFile, '-thumbnail', `${width-1}x${height-1}>`, tempLocalThumbFile], {capture: ['stdout', 'stderr']});
+    return spawn('identify', ['-format', '%wx%h\n', tempLocalFile], {capture: ['stdout', 'stderr']});
   }).then((capture) => {
-      if (capture.stderr) {
-        console.log('Shit errorrrr')
-        console.error(capture.stderr)
-      }
-    const [width, height] = capture.stdout.split('x');
+    if (capture.stderr) {
+      console.log('Shit errorrrr')
+      console.error(capture.stderr)
+    }
+
+    const [width, tempHeight] = capture.stdout.split('x');
+
+    const heightFix = tempHeight.split('\n')
+    const height = heightFix[0];
+
     return {
-      width, height
+      width: parseInt(width),
+      height: parseInt(height),
     }
   }).then((meta) => {
-    console.log('--- CHECK IF GIF VOOR SPAN PROMISE')
     if (contentType === 'image/gif') {
-      console.log('--- TRIGGER SPAWN')
       return new Promise((resolve, reject) => {
         spawn('identify', ['-format', '%T\n', tempLocalFile], {capture: ['stdout', 'stderr']})
           .then(capture => {
-            console.log('-- Deeper in spawn')
             if (capture.stderr) {
               console.log('Shit errorrrr')
               console.error(capture.stderr)
@@ -79,13 +70,12 @@ exports.ProcessImage = functions.storage.object().onFinalize((object) => {
 
             const sizes = capture.stdout.split(/\n/);
             let frameCount = 0;
+
             sizes.forEach(size => {
               if (parseInt(size, 10)) {
                 frameCount+= parseInt(size, 10);
               }
             })
-
-            console.log('FRAMECOUNT whyyy', frameCount, frameCount * 10)
 
             resolve({
               ...meta,
@@ -94,7 +84,6 @@ exports.ProcessImage = functions.storage.object().onFinalize((object) => {
           })
       });
     }
-    console.log('--- BOEIE HOEFT NIET META TERUG')
 
     return {
       ...meta,
@@ -110,6 +99,5 @@ exports.ProcessImage = functions.storage.object().onFinalize((object) => {
       type: 'image',
       meta
     })
-
   });
 });
