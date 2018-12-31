@@ -65,10 +65,13 @@ class SlideShow extends Component {
   }
 
   startSlideTransitionQueue = () => {
-    const duration = 5000;
+    const currentSlide = this.findCurrentItem();
+    const duration = currentSlide.meta.duration;
+
+    console.log("CURRENT SLIDE OOOO", duration)
 
     this.setState(() => ({
-      topItems: [this.findCurrentItem()],
+      topItems: [currentSlide],
       bottomItems: [this.slides[this.getNextIndex()]],
     }), () => {
       this.currentIndex = this.getNextIndex();
@@ -77,10 +80,19 @@ class SlideShow extends Component {
     this.slideTransitionQueue = setInterval(() => {
       if (this.canRunAfter > Date.now()) return;
 
+      const newTarget = this.getTarget();
+
       this.setState(() => ({
-        [this.getTarget()]: [this.findCurrentItem()],
+        [newTarget]: [this.findCurrentItem()],
       }), () => {
-        this.canRunAfter = Date.now() + duration;
+        let newDuration = this.state[newTarget][0].meta.duration;
+
+        if (this.state.bottomItems[0].name.substr(-3).toLowerCase() === 'gif') {
+          newDuration *= 2
+          console.log('double durationnnn', newDuration)
+        }
+
+        this.canRunAfter = Date.now() + newDuration;
         this.currentIndex = this.getNextIndex();
         this.setState((prevState) => ({
           flip: !prevState.flip,
