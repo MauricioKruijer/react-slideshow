@@ -190,10 +190,24 @@ export default (props) => <FirebaseContext.Consumer>
         padding: 0,
         top: 0,
         zIndex: 100,
-        textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
+        textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000',
+        fontSize: '64px'
       }}>
-        <h1>Visit http://mau.house to upload</h1>
+        <h1>https://mau.house</h1>
       </div>
+      <div style={{
+        position: 'absolute',
+        height: '240px',
+        width: '240px',
+        padding: '25px',
+        background: 'white',
+        backgroundImage: 'url(mauhouse_qr.png)',
+        backgroundSize: 'cover',
+        bottom: '40px',
+        right: '40px',
+        borderRadius: '5px',
+        zIndex: '100',
+      }}></div>
       <SlideShow firebase={firebase} {...props}/>
     </div>
      }
