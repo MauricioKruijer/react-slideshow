@@ -58,7 +58,7 @@ class Upload extends Component {
             onUploadError={this.handleUploadError}
             onUploadSuccess={this.handleUploadSuccess}
             onProgress={this.handleProgress}
-            metadata={{ cacheControl: 'max-age=300' }}
+            metadata={{ cacheControl: 'max-age=3600' }}
           />
 
           {avatarURL ?
