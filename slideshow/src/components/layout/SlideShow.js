@@ -89,7 +89,6 @@ class SlideShow extends Component {
 
         if (
           this.state[newTarget][0].name.substr(-3).toLowerCase() === 'gif'
-          || this.state[newTarget][0].type === 'video'
         ) {
           newDuration *= 2
           console.log('double durationnnn', newDuration)
